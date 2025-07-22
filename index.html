@@ -3,20 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scacchi in Fiamme - Gestione Risorse AIB</title>
-    
+    <title>SOUP - Simulatore Strategico AIB</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
     <div id="mappa"></div>
 
     <div id="pannello-controllo">
-        <h2>Gestione Risorse AIB</h2>
-        <ul id="lista-risorse">
-            </ul>
-        <button id="start-btn">AVVIA TURNO</button>
+        <div id="sezione-incendi">
+            <h2>🔥 Incendi Attivi</h2>
+            <ul id="lista-incendi">
+                </ul>
+        </div>
+        <hr>
+        <div id="sezione-dettaglio">
+            <h2>ℹ️ Dettaglio e Assegnazione</h2>
+            <div id="dettaglio-selezione">
+                <p>Seleziona un incendio sulla mappa o dalla lista per assegnare le risorse.</p>
+            </div>
+        </div>
+        <button id="start-btn">AVVIA TURNO SUCCESSIVO</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
