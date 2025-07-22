@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOUP - Simulatore Strategico AIB</title>
+    <title>Scacchiera AIB Basilicata</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,19 +11,22 @@
     <div id="mappa"></div>
 
     <div id="pannello-controllo">
+        <div class="header-pannello">
+            <h2>Scacchiera AIB</h2>
+            <div id="contatore-turni">Turno: 0</div>
+        </div>
         <div id="sezione-incendi">
-            <h2>🔥 Incendi Attivi</h2>
-            <ul id="lista-incendi">
-                </ul>
+            <h3>🔥 Incendi Attivi</h3>
+            <ul id="lista-incendi"></ul>
         </div>
         <hr>
         <div id="sezione-dettaglio">
-            <h2>ℹ️ Dettaglio e Assegnazione</h2>
+            <h3>♟️ Assegnazione Squadre</h3>
             <div id="dettaglio-selezione">
-                <p>Seleziona un incendio sulla mappa o dalla lista per assegnare le risorse.</p>
+                <p>Seleziona un incendio per schierare le tue forze.</p>
             </div>
         </div>
-        <button id="start-btn">AVVIA TURNO SUCCESSIVO</button>
+        <button id="start-btn">AVANZA TURNO</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
