@@ -1,99 +1,135 @@
-// --- 1. INIZIALIZZAZIONE MAPPA ---
-const map = L.map('mappa').setView([40.416, 15.735], 13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
+// --- 1. INIZIALIZZAZIONE MAPPA E STATO ---
+const map = L.map('mappa').setView([40.55, 16.10], 9); // Vista più ampia sulla Basilicata
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-// --- 2. DEFINIZIONE RISORSE E FUOCO ---
-const fuoco = {
-    lat: 40.425, lng: 15.755,
-    marker: L.marker([40.425, 15.755], { 
-        icon: L.divIcon({ className: 'icona-personalizzata', html: '🔥' }) 
-    }).addTo(map).bindPopup('Incendio Boschivo')
+let statoSimulazione = {
+    incendi: [
+        { id: 1, nome: 'Incendio Gallipoli Cognato', lat: 40.52, lng: 16.13, severita: 10, marker: null, li: null },
+        { id: 2, nome: 'Incendio Val d\'Agri', lat: 40.35, lng: 15.82, severita: 8, marker: null, li: null }
+    ],
+    risorse: [
+        { id: 'VVF_PZ', nome: 'VVF Potenza', tipo: 'Torre', icona: '🚒', base_lat: 40.63, base_lng: 15.80, lat: 40.63, lng: 15.80, stato: 'disponibile', incendio_id: null, marker: null },
+        { id: 'VVF_MT', nome: 'VVF Matera', tipo: 'Torre', icona: '🚒', base_lat: 40.66, base_lng: 16.60, lat: 40.66, lng: 16.60, stato: 'disponibile', incendio_id: null, marker: null },
+        { id: 'ODV_TR', nome: 'ODV Tricarico', tipo: 'Alfiere', icona: '🚙', base_lat: 40.61, base_lng: 16.14, lat: 40.61, lng: 16.14, stato: 'disponibile', incendio_id: null, marker: null },
+        { id: 'CB_BR', nome: 'Cons. Bonifica Bradano', tipo: 'Genio', icona: '🚜', base_lat: 40.48, base_lng: 16.42, lat: 40.48, lng: 16.42, stato: 'disponibile', incendio_id: null, marker: null },
+        { id: 'ELR1', nome: 'Elicottero Regione', tipo: 'Aereo', icona: '🚁', base_lat: 40.63, base_lng: 15.80, lat: 40.63, lng: 15.80, stato: 'disponibile', incendio_id: null, marker: null }
+    ],
+    incendioSelezionatoId: null
 };
 
-const risorse = [
-    { id: 'DOS', nome: 'DOS', tipo: 'Comando', icona: '⛺', lat: 40.390, lng: 15.730, stato: 'attivo' },
-    { id: 'VVF1', nome: 'Vigili del Fuoco', tipo: 'Torre', icona: '🚒', lat: 40.410, lng: 15.710, stato: 'inattivo' },
-    { id: 'CDB1', nome: 'Consorzio Bonifica', tipo: 'Genio', icona: '🚜', lat: 40.440, lng: 15.730, stato: 'inattivo' },
-    { id: 'VOL1', nome: 'Volontariato', tipo: 'Alfiere', icona: '🚙', lat: 40.400, lng: 15.760, stato: 'inattivo' },
-    { id: 'ELR1', nome: 'Elicottero #1', tipo: 'Aereo', icona: '🚁', lat: 40.380, lng: 15.700, stato: 'inattivo' },
-    { id: 'ELR2', nome: 'Elicottero #2', tipo: 'Aereo', icona: '🚁', lat: 40.375, lng: 15.705, stato: 'inattivo' },
-    { id: 'CAN1', nome: 'Canadair (COAU)', tipo: 'Regina', icona: '✈️', lat: 40.350, lng: 15.680, stato: 'inattivo' }
-];
+// --- 2. FUNZIONI DI RENDER E AGGIORNAMENTO UI ---
+const listaIncendiUI = document.getElementById('lista-incendi');
+const dettaglioSelezioneUI = document.getElementById('dettaglio-selezione');
 
-// Aggiungiamo le risorse alla mappa e al pannello
-const listaRisorseUI = document.getElementById('lista-risorse');
-risorse.forEach(r => {
-    // Crea il marker sulla mappa
-    r.marker = L.marker([r.lat, r.lng], { 
-        icon: L.divIcon({ className: 'icona-personalizzata', html: r.icona }) 
-    }).addTo(map).bindPopup(r.nome);
-
-    // Crea l'elemento nel pannello di controllo
-    const li = document.createElement('li');
-    li.innerHTML = `
-        <span class="icona-risorsa">${r.icona}</span>
-        <span class="nome-risorsa">${r.nome}</span>
-        <span class="stato ${r.stato}" id="stato-${r.id}">${r.stato}</span>
-    `;
-    // Aggiungiamo un click per "allertare" la risorsa
-    li.addEventListener('click', () => {
-        if (r.stato === 'inattivo') {
-            r.stato = 'allertato';
-            document.getElementById(`stato-${r.id}`).className = 'stato allertato';
-            document.getElementById(`stato-${r.id}`).textContent = 'allertato';
+function renderPannello() {
+    // Render lista incendi
+    listaIncendiUI.innerHTML = '';
+    statoSimulazione.incendi.forEach(incendio => {
+        const li = document.createElement('li');
+        li.className = 'elemento-lista';
+        li.innerHTML = `<span class="nome-elemento">🔥 ${incendio.nome}</span>`;
+        if (incendio.id === statoSimulazione.incendioSelezionatoId) {
+            li.classList.add('selezionato');
         }
+        li.addEventListener('click', () => selezionaIncendio(incendio.id));
+        incendio.li = li;
+        listaIncendiUI.appendChild(li);
     });
-    listaRisorseUI.appendChild(li);
-});
 
-// --- 3. LOGICA DELLA SIMULAZIONE ---
-const startBtn = document.getElementById('start-btn');
-startBtn.addEventListener('click', () => {
-    startBtn.textContent = 'TURNO SUCCESSIVO';
+    // Render pannello dettagli
+    if (!statoSimulazione.incendioSelezionatoId) {
+        dettaglioSelezioneUI.innerHTML = '<p>Seleziona un incendio per assegnare le risorse.</p>';
+        return;
+    }
+
+    const incendio = statoSimulazione.incendi.find(i => i.id === statoSimulazione.incendioSelezionatoId);
+    let htmlDettaglio = `<h3>Assegnazione per: ${incendio.nome}</h3><ul>`;
+
+    statoSimulazione.risorse.forEach(r => {
+        let disabled = '';
+        let buttonText = 'Assegna';
+        if (r.incendio_id) { // Se la risorsa è già assegnata
+            disabled = 'disabled';
+            buttonText = r.incendio_id === incendio.id ? 'Assegnata' : 'Occupata';
+        }
+
+        htmlDettaglio += `
+            <li class="elemento-lista">
+                <span>${r.icona} ${r.nome}</span>
+                <button class="btn-assegna" onclick="assegnaRisorsa(${incendio.id}, '${r.id}')" ${disabled}>
+                    ${buttonText}
+                </button>
+            </li>`;
+    });
+    htmlDettaglio += `</ul>`;
+    dettaglioSelezioneUI.innerHTML = htmlDettaglio;
+}
+
+function selezionaIncendio(id) {
+    statoSimulazione.incendioSelezionatoId = id;
+    map.panTo(statoSimulazione.incendi.find(i => i.id === id).marker.getLatLng());
+    renderPannello();
+}
+
+function assegnaRisorsa(incendioId, risorsaId) {
+    const risorsa = statoSimulazione.risorse.find(r => r.id === risorsaId);
+    if (risorsa && risorsa.stato === 'disponibile') {
+        risorsa.incendio_id = incendioId;
+        risorsa.stato = 'in_transito';
+        console.log(`Risorsa ${risorsa.nome} assegnata all'incendio ${incendioId}`);
+        renderPannello();
+    }
+}
+
+// --- 3. CREAZIONE MARKER SULLA MAPPA ---
+function inizializzaMappa() {
+    // Marker incendi
+    statoSimulazione.incendi.forEach(incendio => {
+        incendio.marker = L.marker([incendio.lat, incendio.lng], { 
+            icon: L.divIcon({ className: 'icona-personalizzata', html: '🔥' })
+        }).addTo(map).bindPopup(incendio.nome);
+        incendio.marker.on('click', () => selezionaIncendio(incendio.id));
+    });
+
+    // Marker risorse
+    statoSimulazione.risorse.forEach(r => {
+        r.marker = L.marker([r.lat, r.lng], {
+            icon: L.divIcon({ className: 'icona-personalizzata', html: r.icona })
+        }).addTo(map).bindPopup(`${r.nome} (${r.stato})`);
+    });
+}
+
+// --- 4. LOGICA DI SIMULAZIONE ---
+document.getElementById('start-btn').addEventListener('click', () => {
     turnoSimulazione();
 });
 
 function turnoSimulazione() {
-    risorse.forEach(r => {
-        // Muoviamo solo le risorse allertate o già attive (tranne il DOS)
-        if ((r.stato === 'allertato' || r.stato === 'attivo') && r.tipo !== 'Comando') {
-            
-            // Una volta mosse, diventano attive
-            r.stato = 'attivo';
-            document.getElementById(`stato-${r.id}`).className = 'stato attivo';
-            document.getElementById(`stato-${r.id}`).textContent = 'attivo';
+    statoSimulazione.risorse.forEach(r => {
+        if (r.stato === 'in_transito' && r.incendio_id) {
+            const incendioTarget = statoSimulazione.incendi.find(i => i.id === r.incendio_id);
+            if (!incendioTarget) return;
 
-            const passoBase = 0.002;
-            let dx = fuoco.lng - r.lng;
-            let dy = fuoco.lat - r.lat;
+            // Movimento verso l'obiettivo
+            const passo = 0.03; // Movimento più rapido per simulazione
+            let dx = incendioTarget.lng - r.lng;
+            let dy = incendioTarget.lat - r.lat;
+            let distanza = Math.sqrt(dx * dx + dy * dy);
 
-            // Logica di movimento personalizzata
-            switch (r.tipo) {
-                case 'Torre': // VVF: si muove su un asse alla volta, come lungo una strada
-                    if (Math.abs(dx) > Math.abs(dy)) r.lng += Math.sign(dx) * passoBase;
-                    else r.lat += Math.sign(dy) * passoBase;
-                    break;
-                case 'Alfiere': // Volontari: si muovono agilmente in diagonale
-                    r.lng += Math.sign(dx) * passoBase * 0.7;
-                    r.lat += Math.sign(dy) * passoBase * 0.7;
-                    break;
-                case 'Genio': // Consorzio: lento ma costante
-                    r.lng += Math.sign(dx) * (passoBase * 0.5);
-                    r.lat += Math.sign(dy) * (passoBase * 0.5);
-                    break;
-                case 'Aereo': // Elicotteri: veloci e diretti
-                    r.lng += Math.sign(dx) * (passoBase * 1.5);
-                    r.lat += Math.sign(dy) * (passoBase * 1.5);
-                    break;
-                case 'Regina': // Canadair: il più veloce di tutti
-                    r.lng += Math.sign(dx) * (passoBase * 2.0);
-                    r.lat += Math.sign(dy) * (passoBase * 2.0);
-                    break;
+            // Se è vicino, arriva e diventa operativo
+            if (distanza < passo) {
+                r.stato = 'operativo';
+                r.marker.setLatLng([incendioTarget.lat, incendioTarget.lng]);
+                r.marker.bindPopup(`${r.nome} (OPERATIVO su ${incendioTarget.nome})`).openPopup();
+            } else { // Altrimenti continua a muoversi
+                r.lat += (dy / distanza) * passo;
+                r.lng += (dx / distanza) * passo;
+                r.marker.setLatLng([r.lat, r.lng]);
             }
-            // Aggiorna la posizione sulla mappa
-            r.marker.setLatLng([r.lat, r.lng]);
         }
     });
 }
+
+// --- 5. AVVIO ---
+inizializzaMappa();
+renderPannello();
