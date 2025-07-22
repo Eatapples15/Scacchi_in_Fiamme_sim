@@ -1,8 +1,9 @@
 // --- 1. SETUP INIZIALE ---
 const map = L.map('mappa').setView([40.45, 16.05], 9); // Vista sulla Basilicata
-L.tileLayer('https://{s}.tile.jawg.io/jawg-terrain/{z}/{x}/{y}{r}.png?access-token={accessToken}', {
-    attribution: '<a href="http://jawg.io" title="Tiles Courtesy of Jawg Maps" target="_blank">&copy; <b>Jawg</b>Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-	accessToken: 'JAWG_MAPS_ACCESS_TOKEN' // Inserisci una chiave Jawg o usa un altro tile layer
+
+// Codice corretto per la mappa, senza token di accesso
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
 const statoPartita = {
@@ -106,14 +107,14 @@ function turnoSimulazione() {
         const incendioTarget = statoPartita.incendi.find(i => i.id === r.incendio_id);
         if (r.stato === 'in_transito' && incendioTarget) {
             // Movimento
-            const passo = 0.10;
+            const passo = 0.10; // Movimento più rapido per simulazione
             let dx = incendioTarget.lng - r.lng;
             let dy = incendioTarget.lat - r.lat;
             let distanza = Math.sqrt(dx * dx + dy * dy);
             if (distanza < passo) {
                 r.stato = 'operativo';
                 r.marker.bindPopup(`${r.nome} (OPERATIVO)`).openPopup();
-            } else {
+            } else { // Altrimenti continua a muoversi
                 r.lat += (dy / distanza) * passo;
                 r.lng += (dx / distanza) * passo;
             }
